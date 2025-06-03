@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nova Consulta - Chatbot Médico</title>
+    <style>
+        body { font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, "Open Sans", "Helvetica Neue", sans-serif; margin: 0; padding: 0; background-color: #f0f2f5; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
+        #consultation-container { width: 95%; max-width: 800px; background-color: #fff; box-shadow: 0 4px 12px rgba(0,0,0,0.1); border-radius: 8px; display: flex; flex-direction: column; height: 90vh; overflow: hidden; }
+
+        #header-bar { background-color: #007bff; color: white; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #0069d9; }
+        #header-bar h2 { margin: 0; font-size: 1.3em; font-weight: 600; }
+        #header-bar .header-actions a { color: white; background-color: #0069d9; padding: 8px 15px; text-decoration: none; border-radius: 5px; font-size: 0.9em; transition: background-color 0.2s ease; }
+        #header-bar .header-actions a:hover { background-color: #005cbf; }
+
+        #patient-context { padding: 12px 20px; background-color: #f8f9fa; border-bottom: 1px solid #dee2e6; font-size: 0.95em; color: #495057; }
+        #patient-context span { font-weight: 600; color: #007bff; }
+        /* Futuramente, adicione aqui campos para selecionar/exibir paciente */
+
+        #chat-messages { flex-grow: 1; padding: 20px; overflow-y: auto; border-bottom: 1px solid #eee; background-color: #ffffff; }
+        .message { margin-bottom: 15px; padding: 10px 15px; border-radius: 18px; line-height: 1.45; max-width: 75%; clear: both; position: relative; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
+        .user-message { background-color: #007bff; color: white; float: right; margin-left: auto; border-bottom-right-radius: 5px; }
+        .bot-message { background-color: #e9ecef; color: #212529; float: left; margin-right: auto; border-bottom-left-radius: 5px; }
+        .message-time { font-size: 0.75em; color: #888; display: block; margin-top: 5px; text-align: right; }
+        .user-message .message-time { color: #e0e0e0; } /* Ajuste para melhor contraste */
+        .bot-message .message-time { color: #6c757d; }
+
+        .typing-indicator { color: #6c757d; font-style: italic; float: left; margin-left: 20px; display: none; padding: 8px 0; font-size: 0.9em; }
+
+        #chat-controls { padding: 15px 20px; border-top: 1px solid #dee2e6; background-color: #f8f9fa; }
+        #chat-form { display: flex; align-items: center; }
+        #userInput { flex-grow: 1; padding: 12px 15px; border: 1px solid #ced4da; border-radius: 20px; margin-right: 10px; font-size: 1em; transition: border-color 0.2s ease, box-shadow 0.2s ease; }
+        #userInput:focus { border-color: #80bdff; outline: 0; box-shadow: 0 0 0 0.2rem rgba(0,123,255,.25); }
+        #mic-button { background: transparent; border: none; font-size: 1.6em; cursor: pointer; padding: 0 10px; color: #007bff; transition: color 0.2s ease; }
+        #mic-button:hover { color: #0056b3; }
+        #sendButton { padding: 12px 20px; background-color: #28a745; color: white; border: none; border-radius: 20px; cursor: pointer; font-size: 1em; font-weight: 500; transition: background-color 0.2s ease; }
+        #sendButton:hover { background-color: #218838; }
+
+        #consultation-actions { padding: 15px 20px; text-align: right; border-top: 1px solid #dee2e6; background-color: #f8f9fa;}
+        .action-button { background-color: #6c757d; color: white; padding: 10px 18px; text-decoration: none; border-radius: 5px; font-size: 0.9em; margin-left: 10px; border: none; cursor: pointer; font-weight: 500; transition: background-color 0.2s ease; }
+        .action-button:hover { background-color: #5a6268; }
+        .save-button { background-color: #ffc107; color: #212529; }
+        .save-button:hover { background-color: #e0a800; }
+    </style>
+</head>
+<body>
+    <div id="consultation-container">
+        <div id="header-bar">
+            <h2>Nova Consulta</h2>
+            <div class="header-actions">
+                <a href="{% url 'dashboard:main_dashboard' %}">Ir para Dashboard</a>
+            </div>
+        </div>
+
+        <div id="patient-context">
+            Paciente: <span id="patientNamePlaceholder">Nenhum paciente selecionado</span>
+        </div>
+
+        <div id="chat-messages">
+            <div class="message bot-message">
+                <div>Olá, Dr(a)! Sou seu assistente. Como posso ajudar na anamnese ou diagnóstico hoje?</div>
+                <span class="message-time"></span>
+            </div>
+        </div>
+        <div class="typing-indicator" id="typingIndicator">Bot está digitando...</div>
+
+        <div id="chat-controls">
+            <form id="chat-form" autocomplete="off">
+                <button type="button" id="mic-button" title="Usar Microfone">&#127908;</button> <input type="text" id="userInput" placeholder="Digite a anamnese ou sua pergunta...">
+                <button type="submit" id="sendButton">Enviar</button>
+            </form>
+        </div>
+
+        <div id="consultation-actions">
+            <button type="button" class="action-button" id="viewHistoryButton">Ver Histórico do Paciente</button>
+            <button type="button" class="action-button save-button" id="saveConsultationButton">Salvar Consulta</button>
+        </div>
+    </div>
+
+    <script>
+        const chatMessages = document.getElementById('chat-messages');
+        const chatForm = document.getElementById('chat-form');
+        const userInput = document.getElementById('userInput');
+        const typingIndicator = document.getElementById('typingIndicator');
+
+        const micButton = document.getElementById('mic-button');
+        const viewHistoryButton = document.getElementById('viewHistoryButton');
+        const saveConsultationButton = document.getElementById('saveConsultationButton');
+
+        // Adiciona a mensagem de boas-vindas do bot com timestamp ao carregar
+        document.addEventListener('DOMContentLoaded', (event) => {
+            const firstBotMessage = chatMessages.querySelector('.bot-message .message-time');
+            if (firstBotMessage) {
+                firstBotMessage.textContent = getCurrentTime();
+            }
+        });
+
+        function getCurrentTime() {
+            const now = new Date();
+            const hours = String(now.getHours()).padStart(2, '0');
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            return `${hours}:${minutes}`;
+        }
+
+        function addMessage(text, sender) {
+            const messageDiv = document.createElement('div');
+            messageDiv.classList.add('message', sender === 'user' ? 'user-message' : 'bot-message');
+            
+            const textNode = document.createElement('div');
+            // Sanitizar o texto antes de adicionar ao HTML para prevenir XSS
+            // textContent já faz isso, não precisa de $('<div>').text(text).html(); se não estiver usando jQuery para criar o elemento
+            textNode.textContent = text; 
+            messageDiv.appendChild(textNode);
+
+            const timeNode = document.createElement('span');
+            timeNode.classList.add('message-time');
+            timeNode.textContent = getCurrentTime();
+            messageDiv.appendChild(timeNode);
+
+            chatMessages.appendChild(messageDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight; // Auto-scroll para a última mensagem
+        }
+
+        chatForm.addEventListener('submit', async function(event) {
+            event.preventDefault(); // Impedir o envio padrão do formulário
+            const userText = userInput.value.trim();
+
+            if (userText === '') return;
+
+            addMessage(userText, 'user');
+            userInput.value = ''; // Limpar o campo de entrada
+            typingIndicator.style.display = 'block'; // Mostrar "Bot está digitando..."
+
+            try {
+                const response = await fetch("{% url 'chat:chatbot_api' %}", { // Usar a tag de URL do Django
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded', // Tipo de conteúdo para dados de formulário
+                        'X-CSRFToken': getCookie('csrftoken') // Adicionar o token CSRF
+                    },
+                    body: `message=${encodeURIComponent(userText)}` // Enviar como dados de formulário
+                });
+
+                typingIndicator.style.display = 'none'; // Esconder "Bot está digitando..."
+
+                if (!response.ok) {
+                    // Tenta pegar o erro do JSON, se falhar, usa um erro genérico
+                    let errorMsg = `Erro: ${response.status}`;
+                    try {
+                        const errorData = await response.json();
+                        errorMsg = errorData.error || errorData.response || errorMsg;
+                    } catch (e) {
+                        // Não conseguiu parsear JSON, mantém o erro de status
+                    }
+                    addMessage(errorMsg, 'bot');
+                    return;
+                }
+
+                const data = await response.json();
+                addMessage(data.response, 'bot');
+
+            } catch (error) {
+                typingIndicator.style.display = 'none';
+                console.error('Erro no JavaScript ao enviar mensagem:', error);
+                addMessage('Desculpe, não consegui me conectar ao servidor.', 'bot');
+            }
+        });
+
+        userInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') { // Enter key
+                // O formulário já lida com o submit, mas se quisesse disparar o botão:
+                // document.getElementById('sendButton').click();
+            }
+        });
+        
+        if(micButton) {
+            micButton.addEventListener('click', function() {
+                alert('Funcionalidade de microfone a ser implementada!');
+            });
+        }
+
+        if(viewHistoryButton) {
+            viewHistoryButton.addEventListener('click', function() {
+                alert('Funcionalidade de histórico do paciente a ser implementada!');
+            });
+        }
+
+        if(saveConsultationButton) {
+            saveConsultationButton.addEventListener('click', function() {
+                alert('Funcionalidade de salvar consulta a ser implementada!');
+            });
+        }
+
+        // Função para obter o valor de um cookie (necessário para CSRF)
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    // O cookie começa com o nome que queremos?
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+    </script>
+</body>
+</html>
