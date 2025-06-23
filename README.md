@@ -40,7 +40,7 @@ A organização do projeto segue as melhores práticas de separação de conceit
 ├── tools/                  # Ferramentas que o agente pode usar (ex: busca RAG).
 │   └── vertex_search_tool.py
 ├── .env                    # Arquivo para variáveis de ambiente (não versionado).
-└── requirements.txt        # (Recomendado migrar para pyproject.toml)
+└── requirements.txt        
 ```
 
 ## Como Executar o Projeto
@@ -64,7 +64,7 @@ Siga os passos abaixo para configurar e executar o agente em um ambiente de dese
 ### 2. Configuração do Ambiente Local
 1.  **Clone o Repositório:**
     ```bash
-    git clone <url_do_seu_repositorio>
+    git clone <url_do_repositorio>
     cd <pasta_do_projeto>
     ```
 2.  **Crie e Ative o Ambiente Virtual:**
@@ -76,8 +76,6 @@ Siga os passos abaixo para configurar e executar o agente em um ambiente de dese
     ```bash
     # Se estiver usando requirements.txt
     uv pip install -r requirements.txt
-    # Instale as dependências que descobrimos serem necessárias
-    uv pip install llama-index
     ```
 4.  **Autentique-se no Google Cloud:**
     ```bash
@@ -99,7 +97,7 @@ Siga os passos abaixo para configurar e executar o agente em um ambiente de dese
 ### 3. Executando o Agente para Testes
 Com o ambiente virtual ativado, execute o servidor de desenvolvimento do ADK:
 ```bash
-adk web adk.py
+adk web
 ```
 Acesse `http://localhost:8000` no seu navegador para interagir com a interface de teste.
 
