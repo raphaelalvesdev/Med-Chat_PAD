@@ -8,7 +8,7 @@
 
 ## Descrição do Projeto
 
-Este projeto implementa um agente de IA conversacional por voz, projetado para atuar como uma ferramenta de apoio à decisão para profissionais de saúde. O objetivo é otimizar a jornada do paciente e do médico antes da consulta, permitindo que o profissional realize uma "pré-consulta" interativa. O agente coleta informações sobre os sintomas do paciente e, utilizando uma arquitetura RAG (Retrieval-Augmented Generation), busca em uma base de dados histórica casos clínicos similares, apresentando os diagnósticos e padrões encontrados para enriquecer a análise do médico.
+Este projeto implementa um agente de IA conversacional por voz, projetado para atuar como uma ferramenta de apoio à decisão para profissionais de saúde. O objetivo é otimizar a jornada do paciente e do médico antes da consulta, permitindo que o profissional realize uma "pré-consulta" interativa. O agente coleta informações sobre os sintomas do paciente e, utilizando uma arquitetura RAG (Retrieval-Augmented Generation), busca em uma base de dados histórica casos clínicos similares, apresentando os diagnósticos e padrões encontrados para enriquecer a análise do médico. Após a conversa, todo o conteúdo é salvo em um banco de dados, sendo possível a recuperação do conteúdo obtido na conversa.
 
 ## Arquitetura da Solução
 
